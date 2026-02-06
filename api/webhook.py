@@ -39,7 +39,7 @@ def calculate(message):
         result = eval(message.text)
         
         markup = InlineKeyboardMarkup()
-        btn = InlineKeyboardButton(text="🔎 အသေးစိတ်ကြည့်ရန်", url="https://5-4.netlify.app")
+        btn = InlineKeyboardButton(text="🔎 website သုံးရန်", url="https://5-4.netlify.app")
         markup.add(btn)
         
         bot.reply_to(message, f"✅ အဖြေမှာ: {result} ဖြစ်ပါတယ်", reply_markup=markup)
