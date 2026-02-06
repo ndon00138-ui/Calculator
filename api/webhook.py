@@ -1,41 +1,44 @@
 import telebot
+import json
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from http.server import BaseHTTPRequestHandler
 
-bot = telebot.TeleBot('8348577528:AAESO9fG1T_iEtG3bF544eBG9SsrJy9FSkk')
+API_TOKEN = '8348577528:AAFiCxaKYhUvNUgCQ4vcpVuSxZpv4cqIGss'
+bot = telebot.TeleBot(API_TOKEN, threaded=False)
 
-# ဘာသာစကား ရွေးချယ်ရန် Keyboard
-def language_markup():
-    markup = InlineKeyboardMarkup()
-    markup.add(
-        InlineKeyboardButton("🇲🇲 မြန်မာစာ", callback_data="lang_mm"),
-        InlineKeyboardButton("🇺🇸 English", callback_data="lang_en")
-    )
-    return markup
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
+        update = telebot.types.Update.de_json(post_data.decode('utf-8'))
+        bot.process_new_updates([update])
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps({"status": "ok"}).encode())
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(
-        message.chat.id, 
-        "Please select your language / ဘာသာစကားရွေးချယ်ပေးပါ ✨", 
-        reply_markup=language_markup()
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("🇲🇲 မြန်မာ", callback_data="mm"),
+        InlineKeyboardButton("🇺🇸 English", callback_data="en")
     )
+    bot.send_message(message.chat.id, "Select Language / ဘာသာစကားရွေးပါ", reply_markup=markup)
 
-# ခလုတ်နှိပ်လိုက်တဲ့အခါ တုံ့ပြန်ပုံ
-@bot.callback_query_handler(func=lambda call: call.data.startswith('lang_'))
-def set_language(call):
-    if call.data == "lang_mm":
-        bot.answer_callback_query(call.id, "မြန်မာဘာသာကို ရွေးချယ်လိုက်ပါပြီ")
-        bot.edit_message_text("တွက်ချက်မည့် ဂဏန်းများကို ပို့ပေးပါဗျ။ 🧮", call.message.chat.id, call.message.message_id)
-    else:
-        bot.answer_callback_query(call.id, "English language selected")
-        bot.edit_message_text("Please send the numbers you want to calculate. 🧮", call.message.chat.id, call.message.message_id)
+@bot.callback_query_handler(func=lambda call: True)
+def callback_query(call):
+    if call.data == "mm":
+        bot.answer_callback_query(call.id, "မြန်မာစာ ရွေးချယ်ပြီး")
+        bot.send_message(call.message.chat.id, "ဂဏန်းများ ပို့ပေးပါဗျ။")
+    elif call.data == "en":
+        bot.answer_callback_query(call.id, "English selected")
+        bot.send_message(call.message.chat.id, "Please send numbers.")
 
 @bot.message_handler(func=lambda message: True)
 def calculate(message):
     try:
         result = eval(message.text)
-        bot.reply_to(message, f"✅ Result: {result}")
+        bot.reply_to(message, f"Result: {result}")
     except:
-        bot.reply_to(message, "⚠️ Invalid input! Please send numbers only.")
-
-bot.infinity_polling()
+        bot.reply_to(message, "Error!")
