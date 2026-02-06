@@ -1,9 +1,10 @@
 import telebot
 import json
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from http.server import BaseHTTPRequestHandler
 
-# သင့်ရဲ့ Bot Token ကို ဒီမှာ အစားထိုးပါ
-API_TOKEN = '8348577528:AAF9MHO7ZEYVyrfHIr0TNsKlnhGme1wiGok'
+# သင့်ရဲ့ Token အသစ်
+API_TOKEN = '8348577528:AAESO9fG1T_iEtG3bF544eBG9SsrJy9FSkk'
 bot = telebot.TeleBot(API_TOKEN, threaded=False)
 
 class handler(BaseHTTPRequestHandler):
@@ -12,21 +13,35 @@ class handler(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         update = telebot.types.Update.de_json(post_data.decode('utf-8'))
         bot.process_new_updates([update])
+        
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         self.wfile.write(json.dumps({"status": "ok"}).encode())
 
-@bot.message_handler(commands=['start', 'help'])
-def send_welcome(message):
-    bot.reply_to(message, "တွက်ချက်ရေး Bot မှ ကြိုဆိုပါတယ်! တွက်ချင်တဲ့ ဂဏန်းတွေကို ပို့ပေးပါ။ ဥပမာ - 150 + 50")
+@bot.message_handler(commands=['start'])
+def start(message):
+    markup = InlineKeyboardMarkup()
+    # သင်ပေးထားတဲ့ Netlify Link ကို ထည့်ထားပေးပါတယ်
+    open_btn = InlineKeyboardButton(text="🌐 Open Website 🚀", url="https://5-4.netlify.app")
+    markup.add(open_btn)
+    
+    bot.send_message(
+        message.chat.id, 
+        "မင်္ဂလာပါ! ကျွန်တော်က Calculator Bot ပါ။\nဂဏန်းတွက်ချက်မှုများ ပို့ပေးနိုင်ပါတယ်ခင်ဗျာ။ ✨", 
+        reply_markup=markup
+    )
 
 @bot.message_handler(func=lambda message: True)
 def calculate(message):
     try:
-        # User ပို့လိုက်တဲ့ စာသားကို သင်္ချာနည်းအရ တွက်ချက်ခြင်း
-        # ဘေးကင်းအောင် eval() အစား ရိုးရှင်းတဲ့ တွက်ချက်မှုပဲ သုံးတာ ပိုကောင်းပေမဲ့ ဒါက အလွယ်ဆုံးပါ
+        # သင်္ချာတွက်ချက်ခြင်း
         result = eval(message.text)
-        bot.reply_to(message, f"အဖြေမှာ: {result} ဖြစ်ပါတယ်ခင်ဗျာ။")
+        
+        markup = InlineKeyboardMarkup()
+        btn = InlineKeyboardButton(text="🔎 အသေးစိတ်ကြည့်ရန်", url="https://5-4.netlify.app")
+        markup.add(btn)
+        
+        bot.reply_to(message, f"✅ အဖြေမှာ: {result} ဖြစ်ပါတယ်", reply_markup=markup)
     except:
-        bot.reply_to(message, "ခွင့်လွှတ်ပါ၊ ဂဏန်းများသာ ပို့ပေးပါ။ (ဥပမာ- 5*5 သို့မဟုတ် 10+10)")
+        bot.reply_to(message, "❌ ဂဏန်းများသာ ပို့ပေးပါ (ဥပမာ- 12+5)")
